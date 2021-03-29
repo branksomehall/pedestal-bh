@@ -1,56 +1,84 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import Form from "react-bootstrap/Form";
 import Card from "react-bootstrap/Card";
 import Button from "react-bootstrap/Button";
-import { useHttpClient } from "../hooks/http-hook";
 import Alert from "react-bootstrap/Alert";
 import { UserContext } from "../context/app-contexts";
+import { Link } from "react-router-dom";
 
 export default function LoginPage() {
   const userContext = useContext(UserContext);
-  const { isLoading, error, sendRequest } = useHttpClient();
+  const [alert, setAlert] = useState({
+    state: false,
+    variant: "",
+    message: "",
+  });
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+
     const email = e.target.email.value;
     const password = e.target.password.value;
-    console.log(email, " ", password);
-    e.preventDefault();
+    const payload = { email, password };
+
     try {
-      const responseData = await sendRequest(
-        "http://localhost:5000/api/users/login",
-        "POST",
-        JSON.stringify({
-          email,
-          password,
-        }),
+      const response = await fetch(
+        `${process.env.REACT_APP_API_BASE_URL}/users/login`,
         {
-          "Content-Type": "application/json",
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
         }
       );
-      userContext.token = responseData.token;
-      userContext.userId = responseData.userId;
-
+      const responseData = await response.json();
       const tokenExpiration = new Date(new Date().getTime() + 1000 * 60 * 60);
 
-      localStorage.setItem(
-        "userData",
-        JSON.stringify({
-          userId: responseData.userId,
-          token: responseData.token,
-          expiration: tokenExpiration.toISOString(),
-        })
-      );
+      console.log(responseData);
+      if (responseData.status === "error") {
+        setAlert({
+          state: true,
+          variant: "danger",
+          message: responseData.message,
+        });
+      } else {
+        // Login was a success
+        const token = responseData.token;
+        const user = responseData.userId;
+
+        userContext.token = token;
+        userContext.user = user;
+        userContext.isLoggedIn = true;
+        await localStorage.setItem(
+          "userData",
+          JSON.stringify({
+            userId: user,
+            token: token,
+            expiration: tokenExpiration.toISOString(),
+          })
+        );
+        setAlert({
+          state: true,
+          variant: "success",
+          message: "Email and Password are valid. Login success!",
+        });
+        userContext.authDispatch("LOGIN");
+      }
     } catch (err) {}
   };
   return (
     <div>
       <Card style={{ width: "30rem", margin: "10vh auto" }}>
         <Card.Header>
-          <Card.Title>Pedestal Login</Card.Title>
+          <Card.Title>Login</Card.Title>
         </Card.Header>
-        <Card.Body>
-          {error && <Alert variant="danger">{error}</Alert>}
-          <Form onSubmit={handleLogin}>
+        <Form onSubmit={handleLogin}>
+          <Card.Body>
+            {alert.state && (
+              <Alert variant={alert.variant}>{alert.message}</Alert>
+            )}
+
             <Form.Group>
               <Form.Label>Email</Form.Label>
               <Form.Control type="email" name="email" />
@@ -59,9 +87,15 @@ export default function LoginPage() {
               <Form.Label>Password</Form.Label>
               <Form.Control type="password" name="password" />
             </Form.Group>
-            <Button type="submit">Submit</Button>
-          </Form>
-        </Card.Body>
+          </Card.Body>
+          <Card.Footer>
+            <Button type="submit">Login</Button>
+            {"  "}
+            <Button as={Link} to="/signup" variant="outline">
+              New User?
+            </Button>
+          </Card.Footer>
+        </Form>
       </Card>
     </div>
   );

@@ -16,6 +16,9 @@ const negativeThoughtRoutes = require("./routes/negative_thought-routes");
 const negativeToPositiveRoutes = require("./routes/negative_to_positive-routes");
 const proudRoutes = require("./routes/proud-routes");
 const struggleRoutes = require("./routes/struggle-routes");
+
+const checkAuth = require("./middleware/check-auth");
+
 require("dotenv").config();
 
 app.use(bodyParser.json());
@@ -23,6 +26,8 @@ app.use(bodyParser.json());
 app.use(cors());
 
 app.use("/api/users", usersRoutes);
+
+app.use(checkAuth);
 app.use("/api/task_manager", taskRoutes);
 app.use("/api/task_manager", quoteRoutes);
 app.use("/api/task_manager", consequenceRoutes);
@@ -37,7 +42,10 @@ app.use((error, req, res, next) => {
     return next(error);
   }
   res.status(error.code || 500);
-  res.json({ message: error.message || "An unknown error occurred!" });
+  res.json({
+    status: "error",
+    message: error.message || "An unknown error occurred!",
+  });
 });
 
 mongoose

@@ -4,6 +4,7 @@ const User = require("../models/user");
 
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const expires_in = 3600000; // 1 hour
 
 const createUser = async (req, res, next) => {
   const errors = validationResult(req);
@@ -74,9 +75,11 @@ const createUser = async (req, res, next) => {
     return next(error);
   }
 
-  res
-    .status(201)
-    .json({ user: createdUser.id, email: createdUser.email, token: token });
+  res.status(201).json({
+    user: createdUser.id,
+    email: createdUser.email,
+    token: token,
+  });
 };
 
 const loginUser = async (req, res, next) => {

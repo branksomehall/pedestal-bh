@@ -165,7 +165,7 @@ const deleteTaskById = async (req, res, next) => {
     return next(error);
   }
 
-  res.status(200).json({ message: "Deleted task" });
+  res.status(200).json({ status: "error", message: "Deleted task" });
 };
 
 exports.createTask = createTask;
