@@ -54,6 +54,28 @@ const getNegativeThoughtById = async (req, res, next) => {
   res.json({ negative_thought });
 };
 
+const getNegativeThoughsforUserDate = async (req, res, next) => {
+  const uid = req.params.uid;
+  const date = req.params.date;
+  let negative_thoughts;
+  try {
+    negative_thoughts = await NegativeThought.find({ uid, date });
+  } catch (err) {
+    const error = createError(
+      500,
+      "Fetching negative thoughts failed for this user and date"
+    );
+    return next(error);
+  }
+  // res.json({
+  //   negative_thoughts: negative_thoughts.map((negative_thought) =>
+  //     negative_thought.toObject({ getters: true })
+  //   ),
+  // });
+
+  res.json(negative_thoughts);
+};
+
 const updateNegativeThoughtById = async (req, res, next) => {
   const negative_thought_id = req.params.negative_thought_id;
   const { content } = req.body;
@@ -82,6 +104,17 @@ const updateNegativeThoughtById = async (req, res, next) => {
 
 const createNegativeThought = async (req, res, next) => {
   const { content, date, uid } = req.body;
+
+  const negative_thought = await NegativeThought.find({ uid, date });
+
+  if (negative_thought.length > 0) {
+    const error = createError(
+      500,
+      "Negative thoughts for this user for this date has been previously set"
+    );
+    return next(error);
+  }
+
   const generatedNegativeThought = new NegativeThought({
     content,
     date,
@@ -123,3 +156,4 @@ exports.getNegativeThoughtsforUser = getNegativeThoughtsforUser;
 exports.getNegativeThoughtById = getNegativeThoughtById;
 exports.updateNegativeThoughtById = updateNegativeThoughtById;
 exports.createNegativeThought = createNegativeThought;
+exports.getNegativeThoughsforUserDate = getNegativeThoughsforUserDate;

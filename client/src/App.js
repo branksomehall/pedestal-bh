@@ -36,15 +36,11 @@ function App() {
     const dateNow = new Date();
     const expirationDate = new Date(storedData?.expiration);
 
-    console.log("Stored Data: ", storedData);
-    console.log("EXPIRATION: ", expirationDate);
-    console.log("Date now: ", dateNow);
+    // console.log("Stored Data: ", storedData);
+    // console.log("EXPIRATION: ", expirationDate);
+    // console.log("Date now: ", dateNow);
 
-    if (
-      storedData &&
-      storedData.token &&
-      new Date(storedData.expiration) > new Date()
-    ) {
+    if (storedData && storedData.token && expirationDate > dateNow) {
       // Execute login function (setToken and set UserId)
       setToken(storedData.token);
       setUserId(storedData.userId);
@@ -52,7 +48,6 @@ function App() {
       console.log("logging in....");
     } else {
       console.log("token expired");
-
       localStorage.clear();
     }
   }, [isLoggedIn]);
@@ -84,7 +79,7 @@ function App() {
                 <Nav.Link as={Link} to="/task_manager/mindfulness">
                   Mindfulness Template
                 </Nav.Link>
-                <Nav.Link as={Link} onClick={() => authDispatch("LOGOUT")}>
+                <Nav.Link onClick={() => authDispatch("LOGOUT")}>
                   Logout
                 </Nav.Link>
               </Nav>
@@ -95,23 +90,22 @@ function App() {
         <UserContext.Provider
           value={{ isLoggedIn, userId, token, authDispatch }}
         >
-          <Route exact={true} path="/">
-            {isLoggedIn ? (
-              <Redirect to="/calendar" />
-            ) : (
-              <Redirect to="/login" />
-            )}
+          <Route exact path="/">
+            <Redirect to="/login" />
           </Route>
+
           <Route exact={true} path="/login">
-            {isLoggedIn ? <Redirect to="/" /> : <LoginPage />}
+            <LoginPage />
           </Route>
+
           <Route exact={true} path="/signup">
-            {isLoggedIn ? <Redirect to="/" /> : <SignUp />}
+            <SignUp />
           </Route>
 
           <Route exact={true} path="/selection">
             {isLoggedIn ? <SelectionPage /> : <Redirect to="/" />}
           </Route>
+
           <DateContext.Provider value={{ dispatch, state }}>
             <Route exact={true} path="/calendar">
               {isLoggedIn ? <CalendarPage /> : <Redirect to="/" />}
@@ -128,8 +122,12 @@ function App() {
             </Route>
           </DateContext.Provider>
 
-          <Route path="*">
-            <Redirect to="/" />
+          <Route path="/*">
+            {isLoggedIn ? (
+              <Redirect to="/calendar" />
+            ) : (
+              <Redirect to="/login" />
+            )}
           </Route>
         </UserContext.Provider>
       </Router>

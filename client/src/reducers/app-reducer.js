@@ -6,9 +6,6 @@ const AppReducer = (state, action) => {
     case "CLEAR_DATE":
       state.date = null;
       return state;
-    case "SET_USER":
-      state.user = "Donn";
-      return state;
     default:
       return state;
   }

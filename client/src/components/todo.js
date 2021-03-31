@@ -1,69 +1,168 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import Card from "react-bootstrap/Card";
 import InputGroup from "react-bootstrap/InputGroup";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
-import { useHttpClient } from "../hooks/http-hook";
+import Spinner from "react-bootstrap/Spinner";
 import { UserContext, DateContext } from "../context/app-contexts";
 
 export default function TodoComponent() {
   const [tasks, setTasks] = useState([]);
-  const { isLoading, error, sendRequest } = useHttpClient();
+  const [isLoading, setIsLoading] = useState(false);
   const userContext = useContext(UserContext);
   const dateContext = useContext(DateContext);
 
+  // Pick up tasks on mount
+  useEffect(() => {
+    const date = new Date(dateContext.state.date).toISOString();
+    fetch(
+      `${process.env.REACT_APP_API_BASE_URL}/task_manager/tasks/user/${userContext.userId}/date/${date}`,
+      {
+        headers: {
+          Authorization: `Bearer ${userContext.token}`,
+        },
+      }
+    )
+      .then((response) => response.text())
+      .then((response) => {
+        const taskList = JSON.parse(response);
+
+        setTasks(taskList.tasks);
+      });
+  }, [dateContext.state.date, userContext]);
+
   const handleAddTask = async (e) => {
+    setIsLoading(true);
     e.preventDefault();
-    let newTaskList = [...tasks];
+
     const newTask = e.target.new_task_name.value;
+    const date = new Date(dateContext.state.date).toISOString();
+    let payload;
 
     try {
-      let payload = JSON.stringify({
+      payload = {
         uid: userContext.userId,
-        date: dateContext.state.date,
+        date: date,
         task_name: newTask,
-      });
+      };
 
-      const responseData = await sendRequest(
-        "http://localhost:5000/api/task_manager/tasks",
-        "POST",
-        payload,
+      console.log("PAYLOAD: ", payload);
+      const response = await fetch(
+        `${process.env.REACT_APP_API_BASE_URL}/task_manager/tasks`,
         {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${userContext.token}`,
+          },
+          body: JSON.stringify(payload),
+        }
+      )
+        .then((response) => response.text())
+
+        .catch((err) => console.log("ERR: ", err));
+      const responseData = await JSON.parse(response);
+
+      let newTaskList = [...tasks];
+      newTaskList.push(responseData);
+
+      setTasks(newTaskList);
+      e.target.new_task_name.value = "";
+      setIsLoading(false);
+    } catch (err) {
+      console.log("ERROR: ", err);
+    }
+  };
+
+  const handleTaskComplete = async (e, task) => {
+    const checkedStatus = e.target.checked;
+    const taskId = task.id;
+
+    const payload = { isCompleted: checkedStatus };
+
+    fetch(
+      `${process.env.REACT_APP_API_BASE_URL}/task_manager/tasks/${taskId}`,
+      {
+        method: "PATCH",
+        headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${userContext.token}`,
-        }
-      );
-    } catch (err) {}
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+  };
 
-    e.target.new_task_name.value = "";
+  const handleTaskDelete = async (e, task) => {
+    const taskId = task.id;
 
-    newTaskList.push(newTask);
+    setIsLoading(true);
+    await fetch(
+      `${process.env.REACT_APP_API_BASE_URL}/task_manager/tasks/${taskId}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${userContext.token}`,
+        },
+      }
+    );
+
+    let newTaskList = [...tasks];
+
+    const foundTaskIndex = newTaskList.findIndex((task) => task.id === taskId);
+
+    newTaskList.splice(foundTaskIndex, 1);
 
     setTasks(newTaskList);
+    setIsLoading(false);
   };
 
   return (
     <Card style={{ maxHeight: "500px", overflow: "auto" }}>
       <Card.Body>
         <h6 style={{ marginBottom: "2rem" }}>Tasks</h6>
-        {tasks.map((task, idx) => {
+        {tasks?.map((task, idx) => {
           return (
             <InputGroup style={{ margin: "0.2rem auto" }} key={idx}>
               <InputGroup.Prepend>
-                <InputGroup.Checkbox />
+                <InputGroup.Checkbox
+                  onChange={(event) => handleTaskComplete(event, task)}
+                  defaultChecked={task.isCompleted}
+                />
               </InputGroup.Prepend>
-              <Form.Control type="text" value={task} readOnly />
+              <Form.Control type="text" value={task.task_name} readOnly />
+              <InputGroup.Append>
+                <Button
+                  variant="outline-danger"
+                  onClick={(e) => handleTaskDelete(e, task)}
+                >
+                  -
+                </Button>
+              </InputGroup.Append>
             </InputGroup>
           );
         })}
         <Form onSubmit={handleAddTask}>
           <InputGroup style={{ margin: "0.2rem auto" }}>
-            <InputGroup.Prepend>
-              <Button variant="outline-secondary" type="submit">
-                Add Task
-              </Button>
-            </InputGroup.Prepend>
-            <Form.Control type="text" name="new_task_name" />
+            {isLoading ? (
+              <InputGroup.Prepend>
+                <Button variant="outline-secondary" disabled>
+                  <Spinner size="sm" /> Loading...
+                </Button>
+              </InputGroup.Prepend>
+            ) : (
+              <InputGroup.Prepend>
+                <Button variant="outline-secondary" type="submit">
+                  Add Task
+                </Button>
+              </InputGroup.Prepend>
+            )}
+
+            <Form.Control
+              type="text"
+              name="new_task_name"
+              disabled={isLoading}
+            />
           </InputGroup>
         </Form>
       </Card.Body>

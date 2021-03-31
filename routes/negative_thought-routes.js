@@ -11,6 +11,11 @@ router.get(
 );
 
 router.get(
+  "/negative_thoughts/user/:uid/date/:date",
+  controller.getNegativeThoughsforUserDate
+);
+
+router.get(
   "/negative_thoughts/:negative_thought_id",
   controller.getNegativeThoughtById
 );

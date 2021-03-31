@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import Form from "react-bootstrap/Form";
 import Card from "react-bootstrap/Card";
 import Button from "react-bootstrap/Button";
@@ -14,6 +14,10 @@ export default function LoginPage() {
     message: "",
   });
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    console.log("IN THE LOGIN");
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -89,9 +93,16 @@ export default function LoginPage() {
             </Form.Group>
           </Card.Body>
           <Card.Footer>
-            <Button type="submit">Login</Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Logging in..." : "Login"}
+            </Button>
             {"  "}
-            <Button as={Link} to="/signup" variant="outline">
+            <Button
+              as={Link}
+              to="/signup"
+              variant="outline"
+              disabled={isLoading}
+            >
               New User?
             </Button>
           </Card.Footer>

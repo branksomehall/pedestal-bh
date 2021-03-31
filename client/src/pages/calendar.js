@@ -14,11 +14,12 @@ export default function CalendarComponent() {
   }, [isUpdated]);
 
   const handleDateChange = (event) => {
-    const date_selected = event.toDateString();
+    const dateFromSelection = new Date(event).toISOString();
+    const dateISO = new Date(dateFromSelection.split("T")[0]);
 
     dateContext.dispatch({
       type: "CHANGE_DATE",
-      payload: { date: date_selected },
+      payload: { date: dateISO },
     });
 
     setIsUpdated(!isUpdated);

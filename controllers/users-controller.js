@@ -65,7 +65,7 @@ const createUser = async (req, res, next) => {
     token = jwt.sign(
       { uid: createdUser.id, email: createdUser.email },
       process.env.SERVER_KEY,
-      { expiresIn: "1h" }
+      { expiresIn: "24h" }
     );
   } catch (err) {
     const error = createError(
@@ -125,7 +125,7 @@ const loginUser = async (req, res, next) => {
     token = jwt.sign(
       { uid: existingUser.id, email: existingUser.email },
       process.env.SERVER_KEY,
-      { expiresIn: "1h" }
+      { expiresIn: "24h" }
     );
   } catch (err) {
     const error = createError(500, "Logging in failed, please try again");

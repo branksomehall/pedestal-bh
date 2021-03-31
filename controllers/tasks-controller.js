@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const User = require("../models/user");
 
 const createTask = async (req, res, next) => {
+  console.log("Creating task...");
   const { task_name, date, uid } = req.body;
   const createdTask = new Task({
     task_name,
@@ -24,8 +25,6 @@ const createTask = async (req, res, next) => {
     const error = createError(404, "Could not find user for provided id");
     return next(error);
   }
-
-  console.log(user);
 
   let result = [];
   try {
@@ -62,7 +61,7 @@ const getTasksforUser = async (req, res, next) => {
   try {
     tasks = await Task.find({ uid });
   } catch (err) {
-    const error = createError(500, "Fetching tasks failedfor this user");
+    const error = createError(500, "Fetching tasks failed for this user");
     return next(error);
   }
 
@@ -165,7 +164,7 @@ const deleteTaskById = async (req, res, next) => {
     return next(error);
   }
 
-  res.status(200).json({ status: "error", message: "Deleted task" });
+  res.status(200).json({ status: "success", message: "Deleted task" });
 };
 
 exports.createTask = createTask;
