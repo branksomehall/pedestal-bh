@@ -73,7 +73,7 @@ const getNegativeThoughsforUserDate = async (req, res, next) => {
   //   ),
   // });
 
-  res.json(negative_thoughts);
+  res.json(negative_thoughts[0]);
 };
 
 const updateNegativeThoughtById = async (req, res, next) => {
@@ -88,7 +88,13 @@ const updateNegativeThoughtById = async (req, res, next) => {
     return next(error);
   }
 
-  negative_thought.content = content;
+  if (content.item_1 !== "") {
+    negative_thought.content.item_1 = content.item_1;
+  } else if (content.item_2 !== "") {
+    negative_thought.content.item_2 = content.item_2;
+  } else {
+    negative_thought.content = content;
+  }
 
   try {
     await negative_thought.save();
@@ -97,9 +103,7 @@ const updateNegativeThoughtById = async (req, res, next) => {
     return next(error);
   }
 
-  res
-    .status(200)
-    .json({ negative_thought: negative_thought.toObject({ getters: true }) });
+  res.status(200).json(negative_thought.toObject({ getters: true }));
 };
 
 const createNegativeThought = async (req, res, next) => {
@@ -148,7 +152,7 @@ const createNegativeThought = async (req, res, next) => {
     return next(error);
   }
 
-  res.json(result);
+  res.json(result[0]);
 };
 
 exports.getNegativeThoughts = getNegativeThoughts;

@@ -2,8 +2,8 @@ const mongoose = require("mongoose");
 
 const negativeToPositiveSchema = new mongoose.Schema({
   content: {
-    item1: { type: String, required: true, default: "" },
-    item_2: { type: String, required: true, default: "" },
+    item1: { type: String, default: "" },
+    item_2: { type: String, default: "" },
   },
   uid: { type: mongoose.Types.ObjectId, require: true, ref: "User" },
   created_on: { type: Date, required: true, default: Date.now },

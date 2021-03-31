@@ -29,33 +29,41 @@ export default function TaskManagerPage() {
 
     // Create empty negative thoughts for user and date
     const initNegativeThoughts = async () => {
-      const payload = {
-        content: {
-          item_1: " ",
-          item_2: " ",
-        },
-        uid: userId,
-        date: fullDate,
-      };
-
-      const response = await fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/task_manager/negative_thoughts/`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+      try {
+        const payload = {
+          content: {
+            item_1: " ",
+            item_2: " ",
           },
-          body: JSON.stringify(payload),
-        }
-      );
+          uid: userId,
+          date: fullDate,
+        };
+        const response = await fetch(
+          `${process.env.REACT_APP_API_BASE_URL}/task_manager/negative_thoughts/`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(payload),
+          }
+        );
+        const responseData = await response.json();
 
-      const responseData = await response.json();
-      // console.log(responseData);
-      if (responseData.status !== "error") {
-        setNegativeThoughts(responseData);
+        if (responseData.status !== "error") {
+          setNegativeThoughts(responseData);
+        }
+      } catch (err) {
+        console.log("ERROR: ", err);
       }
     };
+
+    const initConsequences = async () => {};
+
+    const initNegativeToPositives = async () => {};
+
+    const initQuotes = async () => {};
 
     // Fetch negative thoughts for user and date
     const fetchNegativeThoughts = async () => {
@@ -68,7 +76,9 @@ export default function TaskManagerPage() {
         }
       );
       const responseData = await response.json();
-      if (responseData.length === 0) {
+
+      if (responseData.length > 0) {
+        // if no negative thoughts have been generated, create a new one
         initNegativeThoughts();
       } else {
         setNegativeThoughts(responseData);
@@ -76,7 +86,6 @@ export default function TaskManagerPage() {
     };
 
     fetchNegativeThoughts();
-    console.log("date changed");
     // Fetch consequence for user and date
 
     // Fetch Negative To Positives for user and date
@@ -97,8 +106,31 @@ export default function TaskManagerPage() {
     });
   };
 
-  const handleNegativeThoughtsUpdate = async (e, item) => {
-    console.log(e.target.value, " for item ", item);
+  const handleNegativeThoughtsUpdate = async (e, item, thoughtId) => {
+    const itemKey = item;
+    const thought = e.target.value;
+
+    const payload = {
+      content: {
+        [itemKey]: thought,
+      },
+    };
+
+    const response = await fetch(
+      `${process.env.REACT_APP_API_BASE_URL}/task_manager/negative_thoughts/${thoughtId}`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    const responseData = await response.json();
+
+    setNegativeThoughts(responseData);
   };
   const handleConsequencesUpdate = async (e) => {};
   const handleNegativeToPositiveUpdate = async (e, item) => {};
@@ -145,7 +177,7 @@ export default function TaskManagerPage() {
                           <div>
                             <InputGroup
                               style={{ margin: "0.5rem auto" }}
-                              key={negativeThoughts.id + "-item_1"}
+                              key={negativeThoughts._id + "-item_1"}
                             >
                               <InputGroup.Prepend>
                                 <InputGroup.Text>1</InputGroup.Text>
@@ -153,35 +185,39 @@ export default function TaskManagerPage() {
                               <Form.Control
                                 type="text"
                                 onBlur={(e) =>
-                                  handleNegativeThoughtsUpdate(e, "item_1")
+                                  handleNegativeThoughtsUpdate(
+                                    e,
+                                    "item_1",
+                                    negativeThoughts._id
+                                  )
                                 }
                                 onKeyPress={(e) => {
                                   if (e.key === "Enter") {
                                     e.target.blur();
                                   }
                                 }}
-                                defaultValue={
-                                  negativeThoughts[0]?.content.item_1
-                                }
+                                defaultValue={negativeThoughts?.content?.item_1}
                               />
                             </InputGroup>
-                            <InputGroup key={negativeThoughts.id + "-item_2"}>
+                            <InputGroup key={negativeThoughts._id + "-item_2"}>
                               <InputGroup.Prepend>
                                 <InputGroup.Text>2</InputGroup.Text>
                               </InputGroup.Prepend>
                               <Form.Control
                                 type="text"
                                 onBlur={(e) =>
-                                  handleNegativeThoughtsUpdate(e, "item_2")
+                                  handleNegativeThoughtsUpdate(
+                                    e,
+                                    "item_2",
+                                    negativeThoughts._id
+                                  )
                                 }
                                 onKeyPress={(e) => {
                                   if (e.key === "Enter") {
                                     e.target.blur();
                                   }
                                 }}
-                                defaultValue={
-                                  negativeThoughts[0]?.content.item_2
-                                }
+                                defaultValue={negativeThoughts?.content?.item_2}
                               />
                             </InputGroup>
                           </div>
