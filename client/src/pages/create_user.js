@@ -32,14 +32,11 @@ export default function LoginPage() {
       invitation_code,
     };
     try {
-      const response = await fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/users/signup`,
-        {
-          method: "POST",
-          headers: { "Content-type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
+      const response = await fetch(`/api/users/signup`, {
+        method: "POST",
+        headers: { "Content-type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
       const responseData = await response.json();
       if (responseData.status === "error") {

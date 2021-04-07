@@ -49,7 +49,7 @@ export default function TaskManagerPage() {
     // Fetch negative thoughts for user and date, if empty render empty table if exists render thoughts
     const fetchNegativeThoughts = async (date) => {
       const response = await fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/task_manager/negative_thoughts/user/${userId}/date/${date}`,
+        `/api/task_manager/negative_thoughts/user/${userId}/date/${date}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -70,7 +70,7 @@ export default function TaskManagerPage() {
     // Fetch consequence for user and date
     const fetchConsequence = async (date) => {
       const response = await fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/task_manager/consequences/user/${userId}/date/${date}`,
+        `/api/task_manager/consequences/user/${userId}/date/${date}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -90,7 +90,7 @@ export default function TaskManagerPage() {
     // Fetch Negative To Positives for user and date
     const fetchNegativeToPositives = async (date) => {
       const response = await fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/task_manager/negative_to_positives/user/${userId}/date/${date}`,
+        `/api/task_manager/negative_to_positives/user/${userId}/date/${date}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -109,7 +109,7 @@ export default function TaskManagerPage() {
     // Fetch Quote for user and date
     const fetchQuote = async (date) => {
       const response = await fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/task_manager/quotes/user/${userId}/date/${date}`,
+        `/api/task_manager/quotes/user/${userId}/date/${date}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -125,12 +125,17 @@ export default function TaskManagerPage() {
       }
     };
 
-    setIsLoading(true);
-    fetchNegativeThoughts(dateOnly);
-    fetchConsequence(dateOnly);
-    fetchNegativeToPositives(dateOnly);
-    fetchQuote(dateOnly);
-    setIsLoading(false);
+    const fetchInit = async () => {
+      setIsLoading(true);
+      await fetchNegativeThoughts(dateOnly);
+      await fetchConsequence(dateOnly);
+      await fetchNegativeToPositives(dateOnly);
+      await fetchQuote(dateOnly);
+      setIsLoading(false);
+    };
+
+    fetchInit();
+
     return;
   }, [dateContext.state.date, userId, token, isUpdated]);
 
@@ -163,7 +168,7 @@ export default function TaskManagerPage() {
       },
     };
     const response = await fetch(
-      `${process.env.REACT_APP_API_BASE_URL}/task_manager/negative_thoughts/user/${userId}/date/${dateSelected}`,
+      `/api/task_manager/negative_thoughts/user/${userId}/date/${dateSelected}`,
       {
         method: "PUT",
         headers: {
@@ -189,7 +194,7 @@ export default function TaskManagerPage() {
       content,
     };
     const response = await fetch(
-      `${process.env.REACT_APP_API_BASE_URL}/task_manager/consequences/user/${userId}/date/${dateSelected}`,
+      `/api/task_manager/consequences/user/${userId}/date/${dateSelected}`,
       {
         method: "PUT",
         headers: {
@@ -217,7 +222,7 @@ export default function TaskManagerPage() {
     };
 
     const response = await fetch(
-      `${process.env.REACT_APP_API_BASE_URL}/task_manager/negative_to_positives/user/${userId}/date/${dateOnly}`,
+      `/api/task_manager/negative_to_positives/user/${userId}/date/${dateOnly}`,
       {
         method: "PUT",
         headers: {
@@ -243,7 +248,7 @@ export default function TaskManagerPage() {
       content,
     };
     const response = await fetch(
-      `${process.env.REACT_APP_API_BASE_URL}/task_manager/quotes/user/${userId}/date/${dateSelected}`,
+      `/api/task_manager/quotes/user/${userId}/date/${dateSelected}`,
       {
         method: "PUT",
         headers: {
@@ -280,7 +285,7 @@ export default function TaskManagerPage() {
               </Row>
               <Row>
                 <Col>
-                  <TodoComponent />
+                  <TodoComponent loading={isLoading} />
                 </Col>
                 <Col>
                   <Row>

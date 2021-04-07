@@ -6,7 +6,7 @@ import Button from "react-bootstrap/Button";
 import Spinner from "react-bootstrap/Spinner";
 import { UserContext, DateContext } from "../context/app-contexts";
 
-export default function TodoComponent() {
+export default function TodoComponent(props) {
   const [tasks, setTasks] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const userContext = useContext(UserContext);
@@ -15,14 +15,11 @@ export default function TodoComponent() {
   // Pick up tasks on mount
   useEffect(() => {
     const date = new Date(dateContext.state.date).toISOString();
-    fetch(
-      `${process.env.REACT_APP_API_BASE_URL}/task_manager/tasks/user/${userContext.userId}/date/${date}`,
-      {
-        headers: {
-          Authorization: `Bearer ${userContext.token}`,
-        },
-      }
-    )
+    fetch(`/api/task_manager/tasks/user/${userContext.userId}/date/${date}`, {
+      headers: {
+        Authorization: `Bearer ${userContext.token}`,
+      },
+    })
       .then((response) => response.text())
       .then((response) => {
         const taskList = JSON.parse(response);
@@ -30,6 +27,10 @@ export default function TodoComponent() {
         setTasks(taskList.tasks);
       });
   }, [dateContext.state.date, userContext]);
+
+  useEffect(() => {
+    setIsLoading(props.loading);
+  }, [props.loading]);
 
   const handleAddTask = async (e) => {
     setIsLoading(true);
@@ -47,17 +48,14 @@ export default function TodoComponent() {
       };
 
       console.log("PAYLOAD: ", payload);
-      const response = await fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/task_manager/tasks`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${userContext.token}`,
-          },
-          body: JSON.stringify(payload),
-        }
-      )
+      const response = await fetch(`/api/task_manager/tasks`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${userContext.token}`,
+        },
+        body: JSON.stringify(payload),
+      })
         .then((response) => response.text())
 
         .catch((err) => console.log("ERR: ", err));
@@ -80,32 +78,26 @@ export default function TodoComponent() {
 
     const payload = { isCompleted: checkedStatus };
 
-    fetch(
-      `${process.env.REACT_APP_API_BASE_URL}/task_manager/tasks/${taskId}`,
-      {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${userContext.token}`,
-        },
-        body: JSON.stringify(payload),
-      }
-    );
+    fetch(`/api/task_manager/tasks/${taskId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${userContext.token}`,
+      },
+      body: JSON.stringify(payload),
+    });
   };
 
   const handleTaskDelete = async (e, task) => {
     const taskId = task.id;
 
     setIsLoading(true);
-    await fetch(
-      `${process.env.REACT_APP_API_BASE_URL}/task_manager/tasks/${taskId}`,
-      {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${userContext.token}`,
-        },
-      }
-    );
+    await fetch(`/api/task_manager/tasks/${taskId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${userContext.token}`,
+      },
+    });
 
     let newTaskList = [...tasks];
 

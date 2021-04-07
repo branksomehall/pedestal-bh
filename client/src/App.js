@@ -61,7 +61,7 @@ function App() {
       const refresh_token = JSON.parse(localStorage.getItem("userData"))
         ?.refresh_token;
       const payload = { refresh_token };
-      fetch(`${process.env.REACT_APP_API_BASE_URL}/users/token`, {
+      fetch(`/api/users/token`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
