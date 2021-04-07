@@ -28,37 +28,43 @@ export default function LoginPage() {
     const payload = { email, password };
 
     try {
-      const response = await fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/users/login`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
+      const response = await fetch(`/api/users/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
       const responseData = await response.json();
-      const tokenExpiration = new Date(new Date().getTime() + 1000 * 60 * 60);
+      const tokenExpiration = new Date(
+        new Date().getTime() + responseData.expires_in
+      );
 
-      console.log(responseData);
       if (responseData.status === "error") {
         setAlert({
           state: true,
           variant: "danger",
           message: responseData.message,
         });
+        setIsLoading(false);
       } else {
         // Login was a success
         const token = responseData.token;
+        const refresh_token = responseData.refresh_token;
         const user = responseData.userId;
+        const user_class = responseData.user_class;
+        const expires_in = responseData.expires_in;
 
         userContext.token = token;
         userContext.user = user;
         userContext.isLoggedIn = true;
+        userContext.userClass = user_class;
         await localStorage.setItem(
           "userData",
           JSON.stringify({
             userId: user,
-            token: token,
+            token,
+            refresh_token,
+            user_class,
+            expires_in,
             expiration: tokenExpiration.toISOString(),
           })
         );

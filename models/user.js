@@ -7,22 +7,27 @@ const userSchema = new Schema({
   last_name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true, minLength: 6 },
-  tasks: [{ type: mongoose.Types.ObjectId, require: true, ref: "Task" }], //connect task model to user model
-  goals: [{ type: mongoose.Types.ObjectId, require: true, ref: "Goal" }],
+  user_class: { type: String },
+  tasks: [{ type: mongoose.Types.ObjectId, required: true, ref: "Task" }], //connect task model to user model
+  goals: [{ type: mongoose.Types.ObjectId, required: true, ref: "Goal" }],
   negative_thoughts: [
-    { type: mongoose.Types.ObjectId, require: true, ref: "Negative_Thought" },
+    { type: mongoose.Types.ObjectId, required: true, ref: "Negative_Thought" },
   ],
   negative_to_positives: [
     {
       type: mongoose.Types.ObjectId,
-      require: true,
+      required: true,
       ref: "Negative_to_Positive",
     },
   ],
-  prouds: [{ type: mongoose.Types.ObjectId, require: true, ref: "Proud" }],
-  quotes: [{ type: mongoose.Types.ObjectId, require: true, ref: "Quote" }],
+  prouds: [{ type: mongoose.Types.ObjectId, required: true, ref: "Proud" }],
+  quotes: [{ type: mongoose.Types.ObjectId, required: true, ref: "Quote" }],
+  consequences: [
+    { type: mongoose.Types.ObjectId, required: true, ref: "Consequence" },
+  ],
+
   struggles: [
-    { type: mongoose.Types.ObjectId, require: true, ref: "Struggle" },
+    { type: mongoose.Types.ObjectId, required: true, ref: "Struggle" },
   ],
 });
 

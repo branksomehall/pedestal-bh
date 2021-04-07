@@ -11,6 +11,11 @@ router.get(
 );
 
 router.get(
+  "/negative_to_positives/user/:uid/date/:date",
+  controller.getNegativeToPositiveforUserDate
+);
+
+router.get(
   "/negative_to_positives/:negative_to_positive_id",
   controller.getNegativeToPositiveById
 );
@@ -22,4 +27,8 @@ router.patch(
 
 router.post("/negative_to_positives", controller.createNegativeToPositive);
 
+router.put(
+  "/negative_to_positives/user/:uid/date/:date",
+  controller.updateOrCreateNegativeToPositiveForUserAndDate
+);
 module.exports = router;

@@ -1,10 +1,11 @@
 const createError = require("http-errors");
 const { validationResult } = require("express-validator");
 const User = require("../models/user");
+const RefreshToken = require("../models/refresh_token");
 
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const expires_in = 3600000; // 1 hour
+const expires_in = 900000; // 900k ms = 15 min.
 
 const createUser = async (req, res, next) => {
   const errors = validationResult(req);
@@ -17,7 +18,7 @@ const createUser = async (req, res, next) => {
     return next(error);
   }
 
-  const { first_name, last_name, email, password } = req.body;
+  const { first_name, last_name, email, password, user_class } = req.body;
 
   let existingUser;
   try {
@@ -50,6 +51,7 @@ const createUser = async (req, res, next) => {
     last_name,
     email,
     password: hashedPassword,
+    user_class,
     tasks: [],
   });
 
@@ -121,12 +123,23 @@ const loginUser = async (req, res, next) => {
   }
 
   let token;
+  let refresh_token;
   try {
-    token = jwt.sign(
+    token = generateAccessToken({
+      uid: existingUser.id,
+      email: existingUser.email,
+    });
+    refresh_token = jwt.sign(
       { uid: existingUser.id, email: existingUser.email },
-      process.env.SERVER_KEY,
-      { expiresIn: "24h" }
+      process.env.REFRESH_TOKEN_SECRET
     );
+
+    const generatedRefreshToken = new RefreshToken({
+      uid: existingUser.id,
+      refresh_token,
+    });
+
+    await generatedRefreshToken.save();
   } catch (err) {
     const error = createError(500, "Logging in failed, please try again");
     return next(error);
@@ -135,7 +148,38 @@ const loginUser = async (req, res, next) => {
   res.json({
     userId: existingUser.id,
     email: existingUser.email,
-    token: token,
+    user_class: existingUser.user_class,
+    expires_in,
+    token,
+    refresh_token,
+  });
+};
+
+const updateToken = async (req, res, next) => {
+  const { refresh_token, uid } = req.body;
+
+  if (refresh_token === null) {
+    const error = createError(401, "Logging in failed, please try again");
+    return next(error);
+  }
+  // find refresh token if it exists
+  try {
+    await RefreshToken.findOne({ refresh_token });
+  } catch (err) {
+    const error = createError(403, "Invalid token - coudn't find it on list");
+    return next(error);
+  }
+
+  jwt.verify(refresh_token, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
+    if (err) {
+      const error = createError(403, "Invalid token");
+      return next(error);
+    }
+    const accessToken = generateAccessToken({
+      uid: user.uid,
+      email: user.email,
+    });
+    res.json({ token: accessToken });
   });
 };
 
@@ -150,6 +194,13 @@ const getUsers = async (req, res, next) => {
   res.json({ users: users.map((user) => user.toObject({ getters: true })) });
 };
 
+// DELETE TOKEN ON LOGOUT
+
+const generateAccessToken = (user) => {
+  return jwt.sign(user, process.env.SERVER_KEY, { expiresIn: "15m" });
+};
+
 exports.createUser = createUser;
 exports.loginUser = loginUser;
 exports.getUsers = getUsers;
+exports.updateToken = updateToken;

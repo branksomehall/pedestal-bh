@@ -23,6 +23,8 @@ router.post(
   controller.loginUser
 );
 
+router.post("/token", controller.updateToken);
+
 router.use(checkAuth);
 
 router.get("/", controller.getUsers);

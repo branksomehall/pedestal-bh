@@ -50,7 +50,7 @@ app.use((error, req, res, next) => {
 
 mongoose
   .connect(
-    `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.bhnfw.mongodb.net/test?retryWrites=true&w=majority`,
+    `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.bhnfw.mongodb.net/${process.env.DB_COLLECTION}?retryWrites=true&w=majority`,
     { useNewUrlParser: true }
   )
   .then(() => {

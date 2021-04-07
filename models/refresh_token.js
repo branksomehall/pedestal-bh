@@ -1,10 +1,9 @@
 const mongoose = require("mongoose");
 
-const quoteSchema = new mongoose.Schema({
-  content: { type: String, default: "" },
+const refreshTokenSchema = new mongoose.Schema({
   uid: { type: mongoose.Types.ObjectId, required: true, ref: "User" },
   created_on: { type: Date, required: true, default: Date.now },
-  date: { type: Date, required: true },
+  refresh_token: { type: String, required: true },
 });
 
-module.exports = mongoose.model("Quote", quoteSchema);
+module.exports = mongoose.model("Refresh_Token", refreshTokenSchema);

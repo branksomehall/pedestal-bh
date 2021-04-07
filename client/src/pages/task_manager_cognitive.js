@@ -5,7 +5,9 @@ import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import Card from "react-bootstrap/Card";
 import Form from "react-bootstrap/Form";
+import Spinner from "react-bootstrap/Spinner";
 import InputGroup from "react-bootstrap/InputGroup";
+import Alert from "react-bootstrap/Alert";
 import { DateContext, UserContext } from "../context/app-contexts";
 
 import TodoComponent from "../components/todo";
@@ -14,112 +16,156 @@ export default function TaskManagerPage() {
   const userContext = useContext(UserContext);
   const dateContext = useContext(DateContext);
   const [dateSelected, setDateSelected] = useState();
-
-  const [negativeThoughts, setNegativeThoughts] = useState();
-  const [consequences, setConsequences] = useState();
-  const [negativeToPositives, setNegativeToPositives] = useState();
-  const [quote, setQuote] = useState();
+  const [isUpdated, setIsUpdated] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [negativeThoughts, setNegativeThoughts] = useState({
+    content: {
+      item_1: "",
+      item_2: "",
+    },
+  });
+  const [consequence, setConsequence] = useState({
+    content: "",
+  });
+  const [negativeToPositives, setNegativeToPositives] = useState({
+    content: {
+      item_1: "",
+      item_2: "",
+    },
+  });
+  const [quote, setQuote] = useState({
+    content: "",
+  });
 
   const { userId, token } = userContext;
+
   // Set Date for the task manager page based on context to update the form field
   useEffect(() => {
     const fullDate = new Date(dateContext.state.date).toISOString();
     const dateOnly = fullDate.split("T")[0];
+
     setDateSelected(dateOnly);
 
-    // Create empty negative thoughts for user and date
-    const initNegativeThoughts = async () => {
-      try {
-        const payload = {
-          content: {
-            item_1: " ",
-            item_2: " ",
-          },
-          uid: userId,
-          date: fullDate,
-        };
-        const response = await fetch(
-          `${process.env.REACT_APP_API_BASE_URL}/task_manager/negative_thoughts/`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify(payload),
-          }
-        );
-        const responseData = await response.json();
-
-        if (responseData.status !== "error") {
-          setNegativeThoughts(responseData);
-        }
-      } catch (err) {
-        console.log("ERROR: ", err);
-      }
-    };
-
-    const initConsequences = async () => {};
-
-    const initNegativeToPositives = async () => {};
-
-    const initQuotes = async () => {};
-
-    // Fetch negative thoughts for user and date
-    const fetchNegativeThoughts = async () => {
+    // Fetch negative thoughts for user and date, if empty render empty table if exists render thoughts
+    const fetchNegativeThoughts = async (date) => {
       const response = await fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/task_manager/negative_thoughts/user/${userId}/date/${fullDate}`,
+        `${process.env.REACT_APP_API_BASE_URL}/task_manager/negative_thoughts/user/${userId}/date/${date}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }
-      );
+      ).catch((error) => console.log(error));
+
       const responseData = await response.json();
 
-      if (responseData.length > 0) {
-        // if no negative thoughts have been generated, create a new one
-        initNegativeThoughts();
-      } else {
+      if (responseData.status !== "error") {
+        // if not an error
         setNegativeThoughts(responseData);
+      } else {
+        setNegativeThoughts({ content: { item_1: "", item_2: "" } });
       }
     };
 
-    fetchNegativeThoughts();
     // Fetch consequence for user and date
+    const fetchConsequence = async (date) => {
+      const response = await fetch(
+        `${process.env.REACT_APP_API_BASE_URL}/task_manager/consequences/user/${userId}/date/${date}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      ).catch((error) => console.log(error));
+
+      const responseData = await response.json();
+
+      if (responseData.status !== "error") {
+        setConsequence(responseData);
+      } else {
+        setConsequence({ content: "" });
+      }
+    };
 
     // Fetch Negative To Positives for user and date
+    const fetchNegativeToPositives = async (date) => {
+      const response = await fetch(
+        `${process.env.REACT_APP_API_BASE_URL}/task_manager/negative_to_positives/user/${userId}/date/${date}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      ).catch((error) => console.log(error));
+      const responseData = await response.json();
+
+      if (responseData.status !== "error") {
+        setNegativeToPositives(responseData);
+      } else {
+        setNegativeToPositives({ content: { item_1: "", item_2: "" } });
+      }
+    };
 
     // Fetch Quote for user and date
-  }, [dateContext.state.date, userId]);
+    const fetchQuote = async (date) => {
+      const response = await fetch(
+        `${process.env.REACT_APP_API_BASE_URL}/task_manager/quotes/user/${userId}/date/${date}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      ).catch((error) => console.log(error));
+      const responseData = await response.json();
 
-  const handleDateChange = (e) => {
+      if (responseData.status !== "error") {
+        setQuote(responseData);
+      } else {
+        setQuote({ content: "" });
+      }
+    };
+
+    setIsLoading(true);
+    fetchNegativeThoughts(dateOnly);
+    fetchConsequence(dateOnly);
+    fetchNegativeToPositives(dateOnly);
+    fetchQuote(dateOnly);
+    setIsLoading(false);
+    return;
+  }, [dateContext.state.date, userId, token, isUpdated]);
+
+  const handleDateChange = async (e) => {
+    setIsLoading(true);
     const dateFromSelection = new Date(e.target.value).toISOString();
     const dateOnly = dateFromSelection.split("T")[0];
     const dateISO = new Date(dateOnly);
 
-    setDateSelected(dateOnly);
+    await setDateSelected(dateOnly);
 
-    dateContext.dispatch({
+    await dateContext.dispatch({
       type: "CHANGE_DATE",
       payload: { date: dateISO },
     });
+    setIsUpdated(!isUpdated);
+    setIsLoading(false);
   };
 
-  const handleNegativeThoughtsUpdate = async (e, item, thoughtId) => {
-    const itemKey = item;
-    const thought = e.target.value;
+  const handleNegativeThoughtsFormUpdate = async (e) => {
+    let content = e.target.value;
+
+    if (!content) {
+      content = " ";
+    }
 
     const payload = {
       content: {
-        [itemKey]: thought,
+        [e.target.name]: content,
       },
     };
-
     const response = await fetch(
-      `${process.env.REACT_APP_API_BASE_URL}/task_manager/negative_thoughts/${thoughtId}`,
+      `${process.env.REACT_APP_API_BASE_URL}/task_manager/negative_thoughts/user/${userId}/date/${dateSelected}`,
       {
-        method: "PATCH",
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -132,14 +178,88 @@ export default function TaskManagerPage() {
 
     setNegativeThoughts(responseData);
   };
-  const handleConsequencesUpdate = async (e) => {};
-  const handleNegativeToPositiveUpdate = async (e, item) => {};
-  const handleQuoteUpdate = async (e) => {};
+  const handleConsequencesUpdate = async (e) => {
+    let content = e.target.value;
+
+    if (!content) {
+      content = " ";
+    }
+
+    const payload = {
+      content,
+    };
+    const response = await fetch(
+      `${process.env.REACT_APP_API_BASE_URL}/task_manager/consequences/user/${userId}/date/${dateSelected}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    const responseData = await response.json();
+
+    setConsequence(responseData);
+  };
+  const handleNegativeToPositiveFormUpdate = async (e) => {
+    const fullDate = new Date(dateContext.state.date).toISOString();
+    const dateOnly = fullDate.split("T")[0];
+
+    const item_key = e.target.name.split("-")[1];
+
+    const payload = {
+      content: {
+        [item_key]: e.target.value,
+      },
+    };
+
+    const response = await fetch(
+      `${process.env.REACT_APP_API_BASE_URL}/task_manager/negative_to_positives/user/${userId}/date/${dateOnly}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    const responseData = await response.json();
+
+    setNegativeToPositives(responseData);
+  };
+  const handleQuoteUpdate = async (e) => {
+    let content = e.target.value;
+
+    if (!content) {
+      content = " ";
+    }
+
+    const payload = {
+      content,
+    };
+    const response = await fetch(
+      `${process.env.REACT_APP_API_BASE_URL}/task_manager/quotes/user/${userId}/date/${dateSelected}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    const responseData = await response.json();
+    setQuote(responseData);
+  };
 
   return (
     <Container fluid="lg">
-      <h3>Task Manager</h3>
-
       <Row>
         <Col sm={12}>
           <Card style={{ padding: "1rem" }}>
@@ -147,7 +267,15 @@ export default function TaskManagerPage() {
               <Row>
                 <Col>
                   <h4>Cognitive Behavioural Therapy</h4>
-                  <h5>Task Manager</h5>
+                  <h5>Task Manager </h5>
+                </Col>
+                <Col>
+                  {isLoading && (
+                    <Alert variant="info">
+                      <Spinner animation="grow" variant="info" size="sm" />{" "}
+                      Updating. Please wait ...
+                    </Alert>
+                  )}
                 </Col>
               </Row>
               <Row>
@@ -164,6 +292,7 @@ export default function TaskManagerPage() {
                         type="date"
                         value={dateSelected}
                         onChange={handleDateChange}
+                        disabled={isLoading}
                       />
                     </InputGroup>
                   </Row>
@@ -173,54 +302,44 @@ export default function TaskManagerPage() {
                         <Card.Title as="h6">
                           Two negative thoughts I faced today...
                         </Card.Title>
+
                         {negativeThoughts && (
-                          <div>
+                          <Form
+                            onBlur={(e) => handleNegativeThoughtsFormUpdate(e)}
+                            onKeyPress={(e) => {
+                              if (e.key === "Enter") {
+                                e.target.blur();
+                              }
+                            }}
+                          >
                             <InputGroup
                               style={{ margin: "0.5rem auto" }}
-                              key={negativeThoughts._id + "-item_1"}
+                              key={`${negativeThoughts.content.item_1}-neg-item_1`}
                             >
                               <InputGroup.Prepend>
                                 <InputGroup.Text>1</InputGroup.Text>
                               </InputGroup.Prepend>
                               <Form.Control
                                 type="text"
-                                onBlur={(e) =>
-                                  handleNegativeThoughtsUpdate(
-                                    e,
-                                    "item_1",
-                                    negativeThoughts._id
-                                  )
-                                }
-                                onKeyPress={(e) => {
-                                  if (e.key === "Enter") {
-                                    e.target.blur();
-                                  }
-                                }}
-                                defaultValue={negativeThoughts?.content?.item_1}
+                                defaultValue={negativeThoughts.content.item_1}
+                                name="item_1"
+                                disabled={isLoading}
                               />
                             </InputGroup>
-                            <InputGroup key={negativeThoughts._id + "-item_2"}>
+                            <InputGroup
+                              key={`${negativeThoughts.content.item_2}-neg-item_2`}
+                            >
                               <InputGroup.Prepend>
                                 <InputGroup.Text>2</InputGroup.Text>
                               </InputGroup.Prepend>
                               <Form.Control
                                 type="text"
-                                onBlur={(e) =>
-                                  handleNegativeThoughtsUpdate(
-                                    e,
-                                    "item_2",
-                                    negativeThoughts._id
-                                  )
-                                }
-                                onKeyPress={(e) => {
-                                  if (e.key === "Enter") {
-                                    e.target.blur();
-                                  }
-                                }}
-                                defaultValue={negativeThoughts?.content?.item_2}
+                                defaultValue={negativeThoughts.content.item_2}
+                                name="item_2"
+                                disabled={isLoading}
                               />
                             </InputGroup>
-                          </div>
+                          </Form>
                         )}
                       </Card.Body>
                     </Card>
@@ -231,16 +350,25 @@ export default function TaskManagerPage() {
                         <Card.Title as="h6">
                           Consequences of those thoughts were...
                         </Card.Title>
-                        <Form.Control
-                          as="textarea"
-                          rows={3}
-                          onBlur={handleConsequencesUpdate}
-                          onKeyPress={(e) => {
-                            if (e.key === "Enter") {
-                              e.target.blur();
-                            }
-                          }}
-                        />
+                        {consequence && (
+                          <Form
+                            onBlur={handleConsequencesUpdate}
+                            onKeyPress={(e) => {
+                              if (e.key === "Enter") {
+                                e.target.blur();
+                              }
+                            }}
+                            key={`${consequence.content}-${dateSelected}`}
+                          >
+                            <Form.Control
+                              disabled={isLoading}
+                              as="textarea"
+                              rows={3}
+                              name="consequences"
+                              defaultValue={consequence.content}
+                            />
+                          </Form>
+                        )}
                       </Card.Body>
                     </Card>
                   </Row>
@@ -251,38 +379,51 @@ export default function TaskManagerPage() {
                           Two things I did to transform negativity into
                           positivity!
                         </Card.Title>
-                        <InputGroup style={{ margin: "0.5rem auto" }}>
-                          <InputGroup.Prepend>
-                            <InputGroup.Text>1</InputGroup.Text>
-                          </InputGroup.Prepend>
-                          <Form.Control
-                            type="text"
-                            onBlur={(e) =>
-                              handleNegativeToPositiveUpdate(e, "item_1")
+                        <Form
+                          onBlur={(e) => handleNegativeToPositiveFormUpdate(e)}
+                          onKeyPress={(e) => {
+                            if (e.key === "Enter") {
+                              e.target.blur();
                             }
-                            onKeyPress={(e) => {
-                              if (e.key === "Enter") {
-                                e.target.blur();
-                              }
-                            }}
-                          />
-                        </InputGroup>
-                        <InputGroup>
-                          <InputGroup.Prepend>
-                            <InputGroup.Text>2</InputGroup.Text>
-                          </InputGroup.Prepend>
-                          <Form.Control
-                            type="text"
-                            onBlur={(e) =>
-                              handleNegativeToPositiveUpdate(e, "item_2")
-                            }
-                            onKeyPress={(e) => {
-                              if (e.key === "Enter") {
-                                e.target.blur();
-                              }
-                            }}
-                          />
-                        </InputGroup>
+                          }}
+                          disabled={isLoading}
+                        >
+                          {negativeToPositives && (
+                            <div>
+                              <InputGroup
+                                style={{ margin: "0.5rem auto" }}
+                                key={`${negativeToPositives.content.item_1}-n2p-item_1`}
+                              >
+                                <InputGroup.Prepend>
+                                  <InputGroup.Text>1</InputGroup.Text>
+                                </InputGroup.Prepend>
+                                <Form.Control
+                                  type="text"
+                                  defaultValue={
+                                    negativeToPositives.content.item_1
+                                  }
+                                  name="n2p-item_1"
+                                  disabled={isLoading}
+                                />
+                              </InputGroup>
+                              <InputGroup
+                                key={`${negativeToPositives.content.item_2}-n2p-item_2`}
+                              >
+                                <InputGroup.Prepend>
+                                  <InputGroup.Text>2</InputGroup.Text>
+                                </InputGroup.Prepend>
+                                <Form.Control
+                                  type="text"
+                                  defaultValue={
+                                    negativeToPositives.content.item_2
+                                  }
+                                  name="n2p-item_2"
+                                  disabled={isLoading}
+                                />
+                              </InputGroup>
+                            </div>
+                          )}
+                        </Form>
                       </Card.Body>
                     </Card>
                   </Row>
@@ -292,16 +433,24 @@ export default function TaskManagerPage() {
                 <Card style={{ width: "100%", margin: "0.2rem auto" }}>
                   <Card.Body>
                     <Card.Title>Quote / Reflection of the Day</Card.Title>
-                    <Form.Control
-                      as="textarea"
-                      rows={2}
-                      onBlur={handleQuoteUpdate}
-                      onKeyPress={(e) => {
-                        if (e.key === "Enter") {
-                          e.target.blur();
-                        }
-                      }}
-                    />
+                    {quote && (
+                      <Form
+                        onBlur={handleQuoteUpdate}
+                        onKeyPress={(e) => {
+                          if (e.key === "Enter") {
+                            e.target.blur();
+                          }
+                        }}
+                        key={`${quote.content}-${dateSelected}`}
+                      >
+                        <Form.Control
+                          as="textarea"
+                          rows={2}
+                          defaultValue={quote.content}
+                          disabled={isLoading}
+                        />
+                      </Form>
+                    )}
                   </Card.Body>
                 </Card>
               </Row>

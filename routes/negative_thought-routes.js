@@ -12,7 +12,7 @@ router.get(
 
 router.get(
   "/negative_thoughts/user/:uid/date/:date",
-  controller.getNegativeThoughsforUserDate
+  controller.getNegativeThoughtsforUserDate
 );
 
 router.get(
@@ -26,5 +26,10 @@ router.patch(
 );
 
 router.post("/negative_thoughts", controller.createNegativeThought);
+
+router.put(
+  "/negative_thoughts/user/:uid/date/:date",
+  controller.updateOrCreateNegativeThoughtForUserAndDate
+);
 
 module.exports = router;

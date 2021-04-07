@@ -45,6 +45,28 @@ const getProudById = async (req, res, next) => {
   res.json({ proud });
 };
 
+const getProudforUserDate = async (req, res, next) => {
+  const uid = req.params.uid;
+  const date = req.params.date;
+  let prouds;
+  try {
+    prouds = await Proud.findOne({ uid, date });
+  } catch (err) {
+    const error = createError(
+      500,
+      "Fetching negative thoughts failed for this user and date"
+    );
+    return next(error);
+  }
+
+  if (!prouds) {
+    const error = createError(500, "No prouds for this user and date");
+    return next(error);
+  }
+
+  res.json(prouds);
+};
+
 const updateProudById = async (req, res, next) => {
   const proud_id = req.params.proud_id;
   const { content } = req.body;
@@ -67,6 +89,72 @@ const updateProudById = async (req, res, next) => {
   }
 
   res.status(200).json({ proud: proud.toObject({ getters: true }) });
+};
+
+const updateOrCreateProudForUserAndDate = async (req, res, next) => {
+  // find proud
+  const uid = req.params.uid;
+  const date = req.params.date;
+  const { content } = req.body;
+  let prouds;
+
+  try {
+    prouds = await Proud.findOne({ uid, date });
+  } catch (err) {
+    const error = createError(
+      500,
+      "Fetching prouds failed for this user and date"
+    );
+    return next(error);
+  }
+
+  // if there are no prouds, create
+  if (!prouds) {
+    const generatedProud = new Proud({
+      content,
+      date,
+      uid,
+    });
+    let user;
+
+    try {
+      user = await User.findById(uid);
+    } catch (err) {
+      const error = createError(500, "Creating proud failed");
+      return next(error);
+    }
+
+    if (!user) {
+      const error = createError(500, "Cound not find user for provided uid");
+      return next(error);
+    }
+
+    let result = [];
+    try {
+      const session = await mongoose.startSession();
+      session.startTransaction();
+      result = await generatedProud.save({ session: session });
+      user.prouds.push(generatedProud);
+      await user.save({ session: session });
+      await session.commitTransaction();
+    } catch (err) {
+      const error = createError(500, "Creating proud failed in save");
+      return next(error);
+    }
+
+    res.json(result);
+  } else {
+    prouds.content = content;
+
+    try {
+      await prouds.save();
+    } catch (err) {
+      const error = createError(500, "Could not update proud");
+      return next(error);
+    }
+
+    res.status(200).json(prouds.toObject({ getters: true }));
+  }
 };
 
 const createProud = async (req, res, next) => {
@@ -112,3 +200,5 @@ exports.getProudsforUser = getProudsforUser;
 exports.getProudById = getProudById;
 exports.updateProudById = updateProudById;
 exports.createProud = createProud;
+exports.updateOrCreateProudForUserAndDate = updateOrCreateProudForUserAndDate;
+exports.getProudforUserDate = getProudforUserDate;

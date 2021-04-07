@@ -52,6 +52,28 @@ const getConsequenceById = async (req, res, next) => {
   res.json({ consequence });
 };
 
+const getConsequenceforUserDate = async (req, res, next) => {
+  const uid = req.params.uid;
+  const date = req.params.date;
+  let consequences;
+  try {
+    consequences = await Consequence.findOne({ uid, date });
+  } catch (err) {
+    const error = createError(
+      500,
+      "Fetching consequences failed for this user and date"
+    );
+    return next(error);
+  }
+
+  if (!consequences) {
+    const error = createError(500, "No consequences for this user and date");
+    return next(error);
+  }
+
+  res.json(consequences);
+};
+
 const updateConsequenceById = async (req, res, next) => {
   const consequence_id = req.params.consequence_id;
   const { content } = req.body;
@@ -76,6 +98,72 @@ const updateConsequenceById = async (req, res, next) => {
   res
     .status(200)
     .json({ consequence: consequence.toObject({ getters: true }) });
+};
+
+const updateOrCreateConsequenceForUserAndDate = async (req, res, next) => {
+  // find consequence
+  const uid = req.params.uid;
+  const date = req.params.date;
+  const { content } = req.body;
+  let consequences;
+
+  try {
+    consequences = await Consequence.findOne({ uid, date });
+  } catch (err) {
+    const error = createError(
+      500,
+      "Fetching consequences failed for this user and date"
+    );
+    return next(error);
+  }
+
+  // if there are no consequences, create
+  if (!consequences) {
+    const generatedConsequence = new Consequence({
+      content,
+      date,
+      uid,
+    });
+    let user;
+
+    try {
+      user = await User.findById(uid);
+    } catch (err) {
+      const error = createError(500, "Creating consequence failed");
+      return next(error);
+    }
+
+    if (!user) {
+      const error = createError(500, "Cound not find user for provided uid");
+      return next(error);
+    }
+
+    let result = [];
+    try {
+      const session = await mongoose.startSession();
+      session.startTransaction();
+      result = await generatedConsequence.save({ session: session });
+      user.consequences.push(generatedConsequence);
+      await user.save({ session: session });
+      await session.commitTransaction();
+    } catch (err) {
+      const error = createError(500, "Creating consequence failed in save");
+      return next(error);
+    }
+
+    res.json(result);
+  } else {
+    consequences.content = content;
+
+    try {
+      await consequences.save();
+    } catch (err) {
+      const error = createError(500, "Could not update consequence");
+      return next(error);
+    }
+
+    res.status(200).json(consequences.toObject({ getters: true }));
+  }
 };
 
 const createConsequence = async (req, res, next) => {
@@ -105,8 +193,11 @@ const createConsequence = async (req, res, next) => {
     const session = await mongoose.startSession();
     session.startTransaction();
     result = await generatedConsequence.save({ session: session });
+
     user.consequences.push(generatedConsequence);
+
     await user.save({ session: session });
+
     await session.commitTransaction();
   } catch (err) {
     const error = createError(500, "Creating consequence failed in save");
@@ -121,3 +212,5 @@ exports.getConsequencesforUser = getConsequencesforUser;
 exports.getConsequenceById = getConsequenceById;
 exports.updateConsequenceById = updateConsequenceById;
 exports.createConsequence = createConsequence;
+exports.getConsequenceforUserDate = getConsequenceforUserDate;
+exports.updateOrCreateConsequenceForUserAndDate = updateOrCreateConsequenceForUserAndDate;
