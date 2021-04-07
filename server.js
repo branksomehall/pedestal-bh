@@ -4,6 +4,7 @@ const app = express();
 const port = process.env.PORT || 5000;
 const cors = require("cors");
 const mongoose = require("mongoose");
+const path = require("path");
 
 const taskRoutes = require("./routes/task-routes");
 const usersRoutes = require("./routes/users-routes");
@@ -23,6 +24,8 @@ require("dotenv").config();
 
 app.use(bodyParser.json());
 
+app.use(express.static(path.join(__dirname, "client/build")));
+
 app.use(cors());
 
 app.use("/api/users", usersRoutes);
@@ -36,6 +39,11 @@ app.use("/api/task_manager", negativeThoughtRoutes);
 app.use("/api/task_manager", negativeToPositiveRoutes);
 app.use("/api/task_manager", proudRoutes);
 app.use("/api/task_manager", struggleRoutes);
+
+app.get("*", (req, res) => {
+  // res.sendFile(path.join(__dirname + "/client/build/index.html"));
+  res.send("HELLO");
+});
 
 app.use((error, req, res, next) => {
   if (res.headerSent) {
