@@ -195,6 +195,24 @@ const getUsers = async (req, res, next) => {
 };
 
 // DELETE TOKEN ON LOGOUT
+const deleteRefreshToken = async (req, res, next) => {
+  const { token } = req.body;
+
+  let refreshToken;
+  try {
+    refreshToken = await RefreshToken.findOneAndDelete({
+      refresh_token: token,
+    });
+  } catch (err) {
+    const error = createError(500, "Could not find refresh token");
+    return next(error);
+  }
+
+  res.json({
+    status: "Success",
+    message: "refresh token successfully deleted",
+  });
+};
 
 const generateAccessToken = (user) => {
   return jwt.sign(user, process.env.SERVER_KEY, { expiresIn: "15m" });
@@ -204,3 +222,4 @@ exports.createUser = createUser;
 exports.loginUser = loginUser;
 exports.getUsers = getUsers;
 exports.updateToken = updateToken;
+exports.deleteRefreshToken = deleteRefreshToken;

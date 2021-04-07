@@ -16,12 +16,13 @@ router.post(
   ],
   controller.createUser
 );
-
 router.post(
   "/login",
   [check("email").not().isEmpty(), check("password").not().isEmpty()],
   controller.loginUser
 );
+
+router.delete("/token", controller.deleteRefreshToken);
 
 router.post("/token", controller.updateToken);
 

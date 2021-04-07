@@ -32,6 +32,7 @@ function App() {
   const [isLoggedIn, authDispatch] = useReducer(AuthReducer, false);
   const [updateToken, setUpdateToken] = useState(false);
   const [userClass, setUserClass] = useState();
+  const [refreshToken, setRefreshToken] = useState(false);
 
   let storedData = JSON.parse(localStorage.getItem("userData"));
   const dateNow = new Date();
@@ -42,6 +43,7 @@ function App() {
       // Execute login function (setToken and set UserId)
       setToken(storedData.token);
       setUserId(storedData.userId);
+      setRefreshToken(storedData.refresh_token);
       setUserClass(storedData.user_class);
       authDispatch("LOGIN");
     } else {
@@ -61,6 +63,7 @@ function App() {
       const refresh_token = JSON.parse(localStorage.getItem("userData"))
         ?.refresh_token;
       const payload = { refresh_token };
+
       fetch(`/api/users/token`, {
         method: "POST",
         headers: {
@@ -84,6 +87,22 @@ function App() {
     }
   }, [updateToken]);
 
+  const handleLogout = () => {
+    const payload = {
+      token: refreshToken,
+    };
+    console.log("DELETING: ", payload);
+    fetch(`/api/users/token`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+    authDispatch("LOGOUT");
+  };
+
   return (
     <div>
       <Router>
@@ -99,7 +118,6 @@ function App() {
                 >
                   Calendar
                 </Nav.Link>
-                {console.log(userClass)}
                 {userClass && userClass === "admin" && (
                   <Nav.Link as={Link} to="/signup">
                     Create User
@@ -115,9 +133,7 @@ function App() {
                 <Nav.Link as={Link} to="/task_manager/mindfulness">
                   Mindfulness Template
                 </Nav.Link> */}
-                <Nav.Link onClick={() => authDispatch("LOGOUT")}>
-                  Logout
-                </Nav.Link>
+                <Nav.Link onClick={() => handleLogout()}>Logout</Nav.Link>
               </Nav>
             </Navbar.Collapse>
           )}
